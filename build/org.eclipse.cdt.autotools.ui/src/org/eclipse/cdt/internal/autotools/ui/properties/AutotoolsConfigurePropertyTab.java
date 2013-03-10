@@ -368,7 +368,7 @@ public class AutotoolsConfigurePropertyTab extends AbstractAutotoolsCPropertyTab
 	
 	protected void performDefaults() {
 		IAConfiguration cfg = getAutotoolsCfg();
-		cfg.setDefaultOptions();
+		cfg.setDefaultOptions(getProject());
 		setValues();
 	}
 	

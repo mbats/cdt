@@ -13,6 +13,8 @@ package org.eclipse.cdt.internal.autotools.core.configure;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.eclipse.core.resources.IProject;
+
 public interface IAConfiguration {
 	public IConfigureOption getOption(String name);
 	public String getId();
@@ -24,7 +26,7 @@ public interface IAConfiguration {
 	public void setOption(String name, String value);
 	public void setConfigToolDirectory(String configToolDirectory);
 	public String getConfigToolDirectory();
-	public IAConfiguration copy();
-	public IAConfiguration copy(String id);
-	public void setDefaultOptions();
+	public IAConfiguration copy(IProject project);
+	public IAConfiguration copy(IProject project, String id);
+	public void setDefaultOptions(IProject project);
 }

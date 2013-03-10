@@ -17,7 +17,11 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.eclipse.cdt.autotools.core.AutotoolsOptionConstants;
-
+import org.eclipse.cdt.managedbuilder.core.IOption;
+import org.eclipse.cdt.managedbuilder.core.ITool;
+import org.eclipse.cdt.managedbuilder.core.IToolChain;
+import org.eclipse.cdt.managedbuilder.core.ManagedBuildManager;
+import org.eclipse.core.resources.IProject;
 
 public class AutotoolsConfiguration implements IAConfiguration {
 
@@ -121,20 +125,21 @@ public class AutotoolsConfiguration implements IAConfiguration {
 	private Map<String, IConfigureOption> configOptions;
 	private ArrayList<String> configParms = new ArrayList<String>();
 
-	public AutotoolsConfiguration(String name) {
-		this(name, true);
+	public AutotoolsConfiguration(IProject project, String name) {
+		this(project, name, true);
 	}
-		
-	private AutotoolsConfiguration(String name, boolean initialize) {
+
+	private AutotoolsConfiguration(IProject project, String name,
+			boolean initialize) {
 		this.id = name;
 		configOptions = new HashMap<String, IConfigureOption>();
 		if (initialize)
-			initConfigOptions();
+			initConfigOptions(project);
 		isParmsDirty = true;
 	}
-	
-	private void initConfigOptions() {
-		// Put configure options in hash map.  Ignore categories.
+
+	private void initConfigOptions(IProject project) {
+		// Put configure options in hash map. Ignore categories.
 		ArrayList<Option> tools = new ArrayList<Option>();
 		FlagConfigureOption lastFlag = null;
 		for (int i = 0; i < configOpts.length; ++i) {
@@ -195,8 +200,41 @@ public class AutotoolsConfiguration implements IAConfiguration {
 			}
 		}
 		toolList = tools.toArray(new Option[tools.size()]);
+
+		// To set the --host default value from the plugin.xml, the overriding
+		// toolchain should define a tool that defines has superClass
+		// org.eclipse.linuxtools.cdt.autotools.core.tool.configure. Then the
+		// overriding tool should define an option which defines as superClass
+		// org.eclipse.linuxtools.cdt.autotools.core.tool.configure
+
+		// Get current toolchain
+		IToolChain toolChain = ManagedBuildManager.getBuildInfo(project)
+				.getDefaultConfiguration().getToolChain();
+		ITool[] toolChainTools = toolChain.getTools();
+
+		// Get configure tool
+		for (ITool tool : toolChainTools) {
+			if (tool.getBaseId() != "org.eclipse.linuxtools.cdt.autotools.core.tool.configure"
+					&& tool.getSuperClass() != null
+					&& "org.eclipse.linuxtools.cdt.autotools.core.tool.configure"
+							.equals(tool.getSuperClass().getSuperClass()
+									.getId())) {
+				// Get --host option
+				for (IOption option : tool.getOptions()) {
+					if (option.getSuperClass() != null
+							&& option
+									.getSuperClass()
+									.getBaseId()
+									.equals("org.eclipse.linuxtools.cdt.autotools.core.option.configure.host")) {
+						configOptions.get(AutotoolsOptionConstants.OPT_HOST)
+								.setValue((String) option.getDefaultValue());
+					}
+				}
+			}
+		}
+
 	}
-	
+
 	public static Option[] getOptionList() {
 		return configOpts.clone();
 	}
@@ -239,12 +277,13 @@ public class AutotoolsConfiguration implements IAConfiguration {
 		return configOptions.get(name);
 	}
 
-	public IAConfiguration copy() {
-		return copy(id);
+	public IAConfiguration copy(IProject project) {
+		return copy(project, id);
 	}
-	
-	public IAConfiguration copy(String newId) {
-		AutotoolsConfiguration cfg = new AutotoolsConfiguration(newId, false);
+
+	public IAConfiguration copy(IProject project, String newId) {
+		AutotoolsConfiguration cfg = new AutotoolsConfiguration(project, newId,
+				false);
 		Collection<IConfigureOption> oldValues = configOptions.values();
 		for (Iterator<IConfigureOption> i = oldValues.iterator(); i.hasNext();) {
 			IConfigureOption opt = i.next();
@@ -338,7 +377,7 @@ public class AutotoolsConfiguration implements IAConfiguration {
 		return option.getValue();
 	}
 
-	public void setDefaultOptions() {
-		initConfigOptions();
+	public void setDefaultOptions(IProject project) {
+		initConfigOptions(project);
 	}
 }

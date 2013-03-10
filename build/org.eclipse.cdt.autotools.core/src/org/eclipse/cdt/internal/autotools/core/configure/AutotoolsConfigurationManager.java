@@ -97,7 +97,7 @@ public class AutotoolsConfigurationManager implements IResourceChangeListener {
 	}
 
 	public synchronized IAConfiguration createDefaultConfiguration(IProject project, String id) {
-		IAConfiguration cfg = new AutotoolsConfiguration(id);
+		IAConfiguration cfg = new AutotoolsConfiguration(project, id);
 		return cfg;
 	}
 	
@@ -119,7 +119,7 @@ public class AutotoolsConfigurationManager implements IResourceChangeListener {
 			}
 		} else {
 			if (!persist) {
-				cfg = cfg.copy();
+				cfg = cfg.copy(p);
 			}
 		}
 		return cfg;
@@ -224,7 +224,7 @@ public class AutotoolsConfigurationManager implements IResourceChangeListener {
 							else
 								continue; // have to punt, this doesn't map to real cfg
 						}
-						IAConfiguration cfg = new AutotoolsConfiguration(cfgId);
+						IAConfiguration cfg = new AutotoolsConfiguration(project, cfgId);
 						NodeList l = n.getChildNodes();
 						for (int y = 0; y < l.getLength(); ++y) {
 							Node child = l.item(y);
@@ -311,7 +311,7 @@ public class AutotoolsConfigurationManager implements IResourceChangeListener {
 		if (savedList != null)
 			oldCfg = savedList.get(oldId);
 		if (oldCfg != null) {
-			IAConfiguration newCfg = oldCfg.copy(cfgd.getId());
+			IAConfiguration newCfg = oldCfg.copy(p, cfgd.getId());
 			tmpList.put(cfgd.getId(), newCfg);
 			// Check to see if the new configuration is already stored as part of the project description.
 			// If yes, it should already be saved.  This can occur if the configuration was added as part of
